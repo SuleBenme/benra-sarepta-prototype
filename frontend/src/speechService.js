@@ -1,10 +1,11 @@
 export class BrowserSpeechProvider {
   constructor() {
     this.synth = typeof window !== 'undefined' ? window.speechSynthesis : null
+    this.currentUtterance = null
   }
 
   isSupported() {
-    return Boolean(this.synth && 'SpeechSynthesisUtterance' in window)
+    return Boolean(this.synth && typeof window !== 'undefined' && 'SpeechSynthesisUtterance' in window)
   }
 
   getVoices() {
@@ -19,29 +20,89 @@ export class BrowserSpeechProvider {
     })
   }
 
-  speak(text, voiceURI) {
-    if (!this.isSupported() || !text) return false
+  async waitForVoices(timeoutMs = 1200) {
+    const existing = this.getVoices()
+    if (existing.length) return existing
 
-    this.synth.cancel()
+    return await new Promise(resolve => {
+      let settled = false
+      const done = () => {
+        if (settled) return
+        settled = true
+        resolve(this.getVoices())
+      }
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'nb-NO'
+      const timer = setTimeout(done, timeoutMs)
+      const handler = () => {
+        clearTimeout(timer)
+        if (this.synth) this.synth.removeEventListener('voiceschanged', handler)
+        done()
+      }
 
-    const voices = this.getVoices()
-    const selected = voices.find(voice => voice.voiceURI === voiceURI)
-      || this.getNorwegianVoices()[0]
+      if (this.synth) this.synth.addEventListener('voiceschanged', handler, { once: true })
+    })
+  }
 
-    if (selected) {
-      utterance.voice = selected
-      utterance.lang = selected.lang || 'nb-NO'
+  async speak(text, voiceURI, callbacks = {}) {
+    if (!this.isSupported() || !text?.trim()) {
+      callbacks.onError?.('Talesyntese støttes ikke i denne nettleseren.')
+      return false
     }
 
-    this.synth.speak(utterance)
-    return true
+    try {
+      await this.waitForVoices()
+      this.synth.cancel()
+      this.synth.resume()
+
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'nb-NO'
+      utterance.rate = 0.95
+      utterance.pitch = 1
+      utterance.volume = 1
+
+      const voices = this.getVoices()
+      const selected =
+        voices.find(voice => voice.voiceURI === voiceURI) ||
+        this.getNorwegianVoices()[0] ||
+        voices[0]
+
+      if (selected) {
+        utterance.voice = selected
+        utterance.lang = selected.lang || 'nb-NO'
+      }
+
+      utterance.onstart = () => callbacks.onStart?.(selected)
+      utterance.onend = () => {
+        callbacks.onEnd?.()
+        this.currentUtterance = null
+      }
+      utterance.onerror = event => {
+        callbacks.onError?.(event.error || 'Ukjent feil ved talesyntese.')
+        this.currentUtterance = null
+      }
+
+      // Keep a strong reference. Some browsers may otherwise stop long utterances.
+      this.currentUtterance = utterance
+      this.synth.speak(utterance)
+
+      // Chrome can occasionally remain paused after cancel()/tab switching.
+      setTimeout(() => {
+        if (this.synth?.paused) this.synth.resume()
+      }, 100)
+
+      return true
+    } catch (error) {
+      callbacks.onError?.(error?.message || 'Kunne ikke starte talesyntese.')
+      return false
+    }
   }
 
   stop() {
-    if (this.synth) this.synth.cancel()
+    if (this.synth) {
+      this.synth.cancel()
+      this.synth.resume()
+    }
+    this.currentUtterance = null
   }
 }
 
@@ -62,8 +123,12 @@ export class SpeechService {
     return this.provider.getNorwegianVoices()
   }
 
-  speak(text, voiceURI) {
-    return this.provider.speak(text, voiceURI)
+  waitForVoices() {
+    return this.provider.waitForVoices()
+  }
+
+  speak(text, voiceURI, callbacks) {
+    return this.provider.speak(text, voiceURI, callbacks)
   }
 
   stop() {
