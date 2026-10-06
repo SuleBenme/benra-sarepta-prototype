@@ -22,6 +22,7 @@ function App() {
   const [savedAt, setSavedAt] = useState(null)
   const [voices, setVoices] = useState([])
   const [selectedVoice, setSelectedVoice] = useState(() => localStorage.getItem('sarepta-voice') || '')
+  const [speechStatus, setSpeechStatus] = useState('Klar')
 
   useEffect(() => {
     const loadVoices = () => {
@@ -81,8 +82,17 @@ function App() {
     setPages(prev => [...prev, { id: Date.now(), title: 'Ny side', text: 'Skriv tekst her.' }])
   }
 
-  const readCurrentPage = () => {
-    speechService.speak(`${current.title}. ${current.text}`, selectedVoice)
+  const readCurrentPage = async () => {
+    setSpeechStatus('Starter tale…')
+    await speechService.speak(
+      `${current.title}. ${current.text}`,
+      selectedVoice,
+      {
+        onStart: voice => setSpeechStatus(`Leser opp med ${voice?.name || 'standardstemme'}`),
+        onEnd: () => setSpeechStatus('Ferdig'),
+        onError: error => setSpeechStatus(`Feil: ${error}`)
+      }
+    )
   }
 
   return (
@@ -150,7 +160,8 @@ function App() {
                 </select>
               </label>
 
-              <div className="speechMeta">
+              <div className="speechMeta" aria-live="polite">
+                <strong>Status: {speechStatus}</strong><br />
                 {speechService.isSupported()
                   ? voices.length
                     ? `${voices.length} relevant(e) stemme(r) funnet på denne enheten.`
@@ -161,7 +172,7 @@ function App() {
 
             <div className="actions">
               <button onClick={readCurrentPage}>🔊 Les opp</button>
-              <button onClick={() => speechService.stop()}>Stopp tale</button>
+              <button onClick={() => { speechService.stop(); setSpeechStatus('Stoppet') }}>Stopp tale</button>
               <button onClick={() => setMode('student')}>Åpne elevvisning</button>
             </div>
 
