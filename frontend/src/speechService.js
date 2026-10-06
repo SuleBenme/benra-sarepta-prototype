@@ -43,7 +43,7 @@ export class BrowserSpeechProvider {
     })
   }
 
-  async speak(text, voiceURI, callbacks = {}) {
+  async speak(text, options = {}, callbacks = {}) {
     if (!this.isSupported() || !text?.trim()) {
       callbacks.onError?.('Talesyntese støttes ikke i denne nettleseren.')
       return false
@@ -56,13 +56,13 @@ export class BrowserSpeechProvider {
 
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = 'nb-NO'
-      utterance.rate = 0.95
-      utterance.pitch = 1
+      utterance.rate = Math.min(2, Math.max(0.5, Number(options.rate) || 0.95))
+      utterance.pitch = Math.min(2, Math.max(0, Number(options.pitch) || 1))
       utterance.volume = 1
 
       const voices = this.getVoices()
       const selected =
-        voices.find(voice => voice.voiceURI === voiceURI) ||
+        voices.find(voice => voice.voiceURI === options.voiceURI) ||
         this.getNorwegianVoices()[0] ||
         voices[0]
 
@@ -81,11 +81,9 @@ export class BrowserSpeechProvider {
         this.currentUtterance = null
       }
 
-      // Keep a strong reference. Some browsers may otherwise stop long utterances.
       this.currentUtterance = utterance
       this.synth.speak(utterance)
 
-      // Chrome can occasionally remain paused after cancel()/tab switching.
       setTimeout(() => {
         if (this.synth?.paused) this.synth.resume()
       }, 100)
@@ -127,8 +125,8 @@ export class SpeechService {
     return this.provider.waitForVoices()
   }
 
-  speak(text, voiceURI, callbacks) {
-    return this.provider.speak(text, voiceURI, callbacks)
+  speak(text, options, callbacks) {
+    return this.provider.speak(text, options, callbacks)
   }
 
   stop() {
