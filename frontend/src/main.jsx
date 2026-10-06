@@ -105,6 +105,7 @@ function App() {
 
   const readCurrentPage = () => speakText(`${current.title}. ${current.text}`)
   const readCurrentSentence = () => speakText(currentSentence)
+  const testSpeechRate = () => speakText(`Dette er en test av talehastighet ${speechRate.toFixed(2)} ganger.`)
 
   const nextSentence = () => {
     if (sentenceIndex < sentences.length - 1) {
@@ -226,10 +227,22 @@ function App() {
                   max="1.4"
                   step="0.05"
                   value={speechRate}
-                  onChange={event => setSpeechRate(Number(event.target.value))}
+                  onChange={event => {
+                    const nextRate = Number(event.target.value)
+                    speechService.stop()
+                    setSpeechRate(nextRate)
+                    setSpeechStatus(`Hastighet ${nextRate.toFixed(2)}× valgt – start opplesning på nytt`)
+                  }}
                   disabled={screenReaderMode}
                 />
               </label>
+
+              <div className="rateActions" aria-label="Test talehastighet">
+                <button type="button" onClick={() => setSpeechRate(0.75)} disabled={screenReaderMode}>Rolig 0.75×</button>
+                <button type="button" onClick={() => setSpeechRate(1)} disabled={screenReaderMode}>Normal 1.00×</button>
+                <button type="button" onClick={() => setSpeechRate(1.25)} disabled={screenReaderMode}>Rask 1.25×</button>
+                <button type="button" onClick={testSpeechRate} disabled={screenReaderMode}>🔊 Test hastighet</button>
+              </div>
 
               <label className="toggleRow">
                 <input
