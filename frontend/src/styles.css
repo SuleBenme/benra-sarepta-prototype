@@ -6,8 +6,8 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
-button, input, textarea { font: inherit; }
-button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+button, input, textarea, select { font: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   outline: 4px solid #111;
   outline-offset: 3px;
 }
@@ -18,6 +18,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 28px; }
 }
 h1 { margin:2px 0 0; font-size:2.35rem; letter-spacing:-.04em; }
 h2 { margin:.2rem 0 1.2rem; font-size:1.65rem; }
+h3 { margin:.25rem 0 1rem; font-size:1.12rem; }
 .eyebrow { text-transform:uppercase; letter-spacing:.11em; font-size:.72rem; font-weight:700; color:#536053; }
 .modeSwitch { display:flex; gap:8px; background:#e8e5dc; padding:5px; border-radius:14px; }
 .modeSwitch button { border:0; padding:10px 14px; border-radius:10px; background:transparent; cursor:pointer; }
@@ -35,10 +36,19 @@ h2 { margin:.2rem 0 1.2rem; font-size:1.65rem; }
 .sectionHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
 .saveState { font-size:.85rem; color:#657063; padding-top:8px; }
 label { display:block; font-weight:700; margin:0 0 18px; }
-input, textarea {
+input, textarea, select {
   width:100%; margin-top:7px; border:1px solid #aaa99f; border-radius:10px; padding:12px 13px; background:#fff; color:#202620;
 }
 textarea { resize:vertical; line-height:1.5; }
+.speechPanel {
+  margin: 4px 0 18px;
+  padding: 18px;
+  border: 1px solid #d4d0c5;
+  border-radius: 14px;
+  background: #fbfaf6;
+}
+.voiceLabel { margin-bottom: 10px; }
+.speechMeta { color:#5d665b; font-size:.9rem; line-height:1.45; }
 .actions { display:flex; gap:10px; flex-wrap:wrap; }
 .actions button, .studentActions button, .backBtn {
   border:1px solid #59645a; background:#fff; padding:11px 15px; border-radius:10px; cursor:pointer; font-weight:650;
@@ -55,7 +65,8 @@ textarea { resize:vertical; line-height:1.5; }
 .studentActions { display:flex; justify-content:center; gap:12px; margin-top:24px; flex-wrap:wrap; }
 .studentActions button { min-width:150px; font-size:1.08rem; }
 .studentActions button:disabled { opacity:.38; cursor:not-allowed; }
-.switchHelp { margin:28px auto 18px; color:#555d53; line-height:2; }
+.studentVoice { margin-top:16px; color:#60695f; font-size:.92rem; }
+.switchHelp { margin:22px auto 18px; color:#555d53; line-height:2; }
 kbd { background:#e4e1d8; padding:3px 7px; border-radius:6px; border:1px solid #c8c3b6; }
 .backBtn { background:transparent; }
 @media (max-width:760px) {
