@@ -23,7 +23,12 @@ h3 { margin:.25rem 0 1rem; font-size:1.12rem; }
 .modeSwitch { display:flex; gap:8px; background:#e8e5dc; padding:5px; border-radius:14px; }
 .modeSwitch button { border:0; padding:10px 14px; border-radius:10px; background:transparent; cursor:pointer; }
 .modeSwitch .active { background:#fff; box-shadow:0 1px 5px rgba(0,0,0,.08); }
-.layout { display:grid; grid-template-columns:250px 1fr; gap:28px; padding-top:28px; }
+.contentTabs { display:flex; gap:10px; padding:20px 0 0; }
+.contentTabs button {
+  border:1px solid #a9ada5; background:#fff; padding:10px 18px; border-radius:999px; cursor:pointer; font-weight:700;
+}
+.contentTabs button.active { background:#263428; color:#fff; border-color:#263428; }
+.layout { display:grid; grid-template-columns:250px 1fr; gap:28px; padding-top:22px; }
 .sidebar { padding-right:18px; border-right:1px solid #ddd8cd; }
 .sideTitle { font-weight:700; margin-bottom:12px; }
 .pageBtn, .addBtn {
@@ -40,6 +45,21 @@ input, textarea, select {
   width:100%; margin-top:7px; border:1px solid #aaa99f; border-radius:10px; padding:12px 13px; background:#fff; color:#202620;
 }
 textarea { resize:vertical; line-height:1.5; }
+.mediaEditor { margin:0 0 18px; }
+.mediaPreview {
+  min-height:240px; border:1px dashed #b8b3a8; border-radius:14px; background:#faf9f5;
+  display:grid; place-items:center; overflow:hidden; margin-bottom:12px;
+}
+.mediaPreview img, .mediaPreview video {
+  width:100%; max-height:380px; object-fit:contain; background:#111;
+}
+.mediaPlaceholder {
+  min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; color:#697166; text-align:center; padding:24px;
+}
+.mediaPlaceholder span { font-size:2rem; }
+.mediaPlaceholder.compact { min-height:180px; width:100%; }
+.fileLabel input { padding:10px; }
+.mediaMessage { min-height:1.2em; font-size:.9rem; color:#5d665b; margin-top:-8px; }
 .speechPanel {
   margin: 4px 0 18px;
   padding: 18px;
@@ -48,10 +68,10 @@ textarea { resize:vertical; line-height:1.5; }
   background: #fbfaf6;
 }
 .voiceLabel, .rangeLabel { margin-bottom: 14px; }
+.rangeLabel input[type="range"] { padding:0; }
 .rateActions { display:flex; flex-wrap:wrap; gap:8px; margin:-4px 0 16px; }
 .rateActions button { border:1px solid #8e948b; background:#fff; padding:8px 10px; border-radius:9px; cursor:pointer; }
 .rateActions button:disabled { opacity:.4; cursor:not-allowed; }
-.rangeLabel input[type="range"] { padding:0; }
 .toggleRow {
   display:flex;
   gap:12px;
@@ -72,19 +92,20 @@ textarea { resize:vertical; line-height:1.5; }
 }
 .actions button:disabled, .studentActions button:disabled { opacity:.4; cursor:not-allowed; }
 .note { margin-top:24px; padding:14px 16px; background:#ece9df; border-radius:10px; color:#50574e; line-height:1.45; font-size:.93rem; }
-.student { max-width:900px; margin:50px auto; text-align:center; }
+.student { max-width:900px; margin:34px auto 50px; text-align:center; }
+.studentType { display:inline-block; background:#e6ebe3; padding:7px 11px; border-radius:999px; font-weight:700; margin-bottom:12px; }
 .progress { font-weight:700; color:#5d665b; margin-bottom:16px; }
 .studentCard {
-  background:#fff; min-height:330px; border-radius:24px; padding:54px 48px; box-shadow:0 12px 40px rgba(0,0,0,.07);
+  background:#fff; min-height:330px; border-radius:24px; padding:40px 48px; box-shadow:0 12px 40px rgba(0,0,0,.07);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.studentMedia { width:100%; margin-bottom:24px; }
+.studentMedia img, .studentMedia video {
+  width:100%; max-height:420px; object-fit:contain; border-radius:16px; background:#111;
 }
 .studentCard h2 { font-size:2.2rem; margin:0 0 24px; color:#4f5b50; }
 .studentCard p { font-size:1.8rem; line-height:1.55; max-width:700px; margin:0; }
-.sentenceFocus {
-  padding:18px 22px;
-  border-radius:14px;
-  background:#f2f0e9;
-}
+.sentenceFocus { padding:18px 22px; border-radius:14px; background:#f2f0e9; }
 .studentActions { display:flex; justify-content:center; gap:12px; margin-top:24px; flex-wrap:wrap; }
 .studentActions button { min-width:170px; font-size:1.08rem; }
 .studentVoice { margin-top:16px; color:#60695f; font-size:.92rem; }
@@ -96,7 +117,7 @@ kbd { background:#e4e1d8; padding:3px 7px; border-radius:6px; border:1px solid #
   .topbar { align-items:flex-start; flex-direction:column; }
   .layout { grid-template-columns:1fr; }
   .sidebar { border-right:0; border-bottom:1px solid #ddd8cd; padding:0 0 18px; }
-  .studentCard { padding:36px 22px; }
+  .studentCard { padding:28px 18px; }
   .studentCard h2 { font-size:1.8rem; }
   .studentCard p { font-size:1.35rem; }
 }
