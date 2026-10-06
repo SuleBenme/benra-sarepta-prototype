@@ -1,0 +1,69 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #202620;
+  background: #f5f3ed;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, textarea { font: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 4px solid #111;
+  outline-offset: 3px;
+}
+main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+.topbar {
+  display:flex; justify-content:space-between; gap:24px; align-items:center;
+  padding:16px 0 24px; border-bottom:1px solid #d7d2c7;
+}
+h1 { margin:2px 0 0; font-size:2.35rem; letter-spacing:-.04em; }
+h2 { margin:.2rem 0 1.2rem; font-size:1.65rem; }
+.eyebrow { text-transform:uppercase; letter-spacing:.11em; font-size:.72rem; font-weight:700; color:#536053; }
+.modeSwitch { display:flex; gap:8px; background:#e8e5dc; padding:5px; border-radius:14px; }
+.modeSwitch button { border:0; padding:10px 14px; border-radius:10px; background:transparent; cursor:pointer; }
+.modeSwitch .active { background:#fff; box-shadow:0 1px 5px rgba(0,0,0,.08); }
+.layout { display:grid; grid-template-columns:250px 1fr; gap:28px; padding-top:28px; }
+.sidebar { padding-right:18px; border-right:1px solid #ddd8cd; }
+.sideTitle { font-weight:700; margin-bottom:12px; }
+.pageBtn, .addBtn {
+  width:100%; text-align:left; border:0; background:transparent; padding:11px 10px; border-radius:10px; cursor:pointer; margin-bottom:4px;
+}
+.pageBtn span { display:inline-grid; place-items:center; width:24px; height:24px; margin-right:9px; border-radius:50%; background:#e5e0d4; font-size:.8rem; }
+.pageBtn.selected { background:#e6ebe3; font-weight:700; }
+.addBtn { margin-top:12px; border:1px dashed #9fa69b; }
+.editor { max-width:760px; }
+.sectionHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.saveState { font-size:.85rem; color:#657063; padding-top:8px; }
+label { display:block; font-weight:700; margin:0 0 18px; }
+input, textarea {
+  width:100%; margin-top:7px; border:1px solid #aaa99f; border-radius:10px; padding:12px 13px; background:#fff; color:#202620;
+}
+textarea { resize:vertical; line-height:1.5; }
+.actions { display:flex; gap:10px; flex-wrap:wrap; }
+.actions button, .studentActions button, .backBtn {
+  border:1px solid #59645a; background:#fff; padding:11px 15px; border-radius:10px; cursor:pointer; font-weight:650;
+}
+.note { margin-top:24px; padding:14px 16px; background:#ece9df; border-radius:10px; color:#50574e; line-height:1.45; font-size:.93rem; }
+.student { max-width:900px; margin:50px auto; text-align:center; }
+.progress { font-weight:700; color:#5d665b; margin-bottom:16px; }
+.studentCard {
+  background:#fff; min-height:330px; border-radius:24px; padding:54px 48px; box-shadow:0 12px 40px rgba(0,0,0,.07);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.studentCard h2 { font-size:2.5rem; margin:0 0 24px; }
+.studentCard p { font-size:1.65rem; line-height:1.55; max-width:700px; margin:0; }
+.studentActions { display:flex; justify-content:center; gap:12px; margin-top:24px; flex-wrap:wrap; }
+.studentActions button { min-width:150px; font-size:1.08rem; }
+.studentActions button:disabled { opacity:.38; cursor:not-allowed; }
+.switchHelp { margin:28px auto 18px; color:#555d53; line-height:2; }
+kbd { background:#e4e1d8; padding:3px 7px; border-radius:6px; border:1px solid #c8c3b6; }
+.backBtn { background:transparent; }
+@media (max-width:760px) {
+  main { padding:18px; }
+  .topbar { align-items:flex-start; flex-direction:column; }
+  .layout { grid-template-columns:1fr; }
+  .sidebar { border-right:0; border-bottom:1px solid #ddd8cd; padding:0 0 18px; }
+  .studentCard { padding:36px 22px; }
+  .studentCard h2 { font-size:2rem; }
+  .studentCard p { font-size:1.3rem; }
+}
