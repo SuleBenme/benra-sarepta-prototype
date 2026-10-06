@@ -47,12 +47,27 @@ textarea { resize:vertical; line-height:1.5; }
   border-radius: 14px;
   background: #fbfaf6;
 }
-.voiceLabel { margin-bottom: 10px; }
+.voiceLabel, .rangeLabel { margin-bottom: 14px; }
+.rangeLabel input[type="range"] { padding:0; }
+.toggleRow {
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  padding:13px;
+  margin:4px 0 14px;
+  border:1px solid #d7d2c7;
+  border-radius:10px;
+  background:#fff;
+}
+.toggleRow input { width:auto; margin:3px 0 0; }
+.toggleRow span { display:flex; flex-direction:column; gap:3px; }
+.toggleRow small { font-weight:400; color:#5d665b; line-height:1.4; }
 .speechMeta { color:#5d665b; font-size:.9rem; line-height:1.45; }
 .actions { display:flex; gap:10px; flex-wrap:wrap; }
 .actions button, .studentActions button, .backBtn {
   border:1px solid #59645a; background:#fff; padding:11px 15px; border-radius:10px; cursor:pointer; font-weight:650;
 }
+.actions button:disabled, .studentActions button:disabled { opacity:.4; cursor:not-allowed; }
 .note { margin-top:24px; padding:14px 16px; background:#ece9df; border-radius:10px; color:#50574e; line-height:1.45; font-size:.93rem; }
 .student { max-width:900px; margin:50px auto; text-align:center; }
 .progress { font-weight:700; color:#5d665b; margin-bottom:16px; }
@@ -60,11 +75,15 @@ textarea { resize:vertical; line-height:1.5; }
   background:#fff; min-height:330px; border-radius:24px; padding:54px 48px; box-shadow:0 12px 40px rgba(0,0,0,.07);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
 }
-.studentCard h2 { font-size:2.5rem; margin:0 0 24px; }
-.studentCard p { font-size:1.65rem; line-height:1.55; max-width:700px; margin:0; }
+.studentCard h2 { font-size:2.2rem; margin:0 0 24px; color:#4f5b50; }
+.studentCard p { font-size:1.8rem; line-height:1.55; max-width:700px; margin:0; }
+.sentenceFocus {
+  padding:18px 22px;
+  border-radius:14px;
+  background:#f2f0e9;
+}
 .studentActions { display:flex; justify-content:center; gap:12px; margin-top:24px; flex-wrap:wrap; }
-.studentActions button { min-width:150px; font-size:1.08rem; }
-.studentActions button:disabled { opacity:.38; cursor:not-allowed; }
+.studentActions button { min-width:170px; font-size:1.08rem; }
 .studentVoice { margin-top:16px; color:#60695f; font-size:.92rem; }
 .switchHelp { margin:22px auto 18px; color:#555d53; line-height:2; }
 kbd { background:#e4e1d8; padding:3px 7px; border-radius:6px; border:1px solid #c8c3b6; }
@@ -75,6 +94,6 @@ kbd { background:#e4e1d8; padding:3px 7px; border-radius:6px; border:1px solid #
   .layout { grid-template-columns:1fr; }
   .sidebar { border-right:0; border-bottom:1px solid #ddd8cd; padding:0 0 18px; }
   .studentCard { padding:36px 22px; }
-  .studentCard h2 { font-size:2rem; }
-  .studentCard p { font-size:1.3rem; }
+  .studentCard h2 { font-size:1.8rem; }
+  .studentCard p { font-size:1.35rem; }
 }
