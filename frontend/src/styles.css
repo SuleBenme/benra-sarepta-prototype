@@ -48,6 +48,9 @@ textarea { resize:vertical; line-height:1.5; }
   background: #fbfaf6;
 }
 .voiceLabel, .rangeLabel { margin-bottom: 14px; }
+.rateActions { display:flex; flex-wrap:wrap; gap:8px; margin:-4px 0 16px; }
+.rateActions button { border:1px solid #8e948b; background:#fff; padding:8px 10px; border-radius:9px; cursor:pointer; }
+.rateActions button:disabled { opacity:.4; cursor:not-allowed; }
 .rangeLabel input[type="range"] { padding:0; }
 .toggleRow {
   display:flex;
