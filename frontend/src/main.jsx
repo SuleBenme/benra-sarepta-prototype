@@ -9,6 +9,17 @@ const defaultPages = [
   { id: 3, title: 'Ferdig', text: 'Bra jobbet. Nå er teksten ferdig.' },
 ]
 
+const defaultPicturePages = [
+  {
+    id: 1,
+    title: 'Bella i parken',
+    description: 'Dette er Bella. Bella går i parken. Bella finner en rød ball.',
+    mediaType: 'image',
+    mediaUrl: '',
+    altText: 'Eksempelbilde for bildebok'
+  }
+]
+
 function splitSentences(text) {
   const cleaned = (text || '').trim()
   if (!cleaned) return []
@@ -16,27 +27,40 @@ function splitSentences(text) {
   return (matches || [cleaned]).map(sentence => sentence.trim()).filter(Boolean)
 }
 
+function loadLocal(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback
+  } catch {
+    return fallback
+  }
+}
+
 function App() {
   const [mode, setMode] = useState('adult')
-  const [pages, setPages] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('sarepta-pages')) || defaultPages
-    } catch {
-      return defaultPages
-    }
-  })
+  const [contentType, setContentType] = useState('text')
+  const [pages, setPages] = useState(() => loadLocal('sarepta-pages', defaultPages))
+  const [picturePages, setPicturePages] = useState(() => loadLocal('sarepta-picture-pages', defaultPicturePages))
   const [active, setActive] = useState(0)
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [savedAt, setSavedAt] = useState(null)
+  const [mediaMessage, setMediaMessage] = useState('')
   const [voices, setVoices] = useState([])
   const [selectedVoice, setSelectedVoice] = useState(() => localStorage.getItem('sarepta-voice') || '')
   const [speechRate, setSpeechRate] = useState(() => Number(localStorage.getItem('sarepta-rate')) || 0.95)
   const [screenReaderMode, setScreenReaderMode] = useState(() => localStorage.getItem('sarepta-screen-reader') === 'true')
   const [speechStatus, setSpeechStatus] = useState('Klar')
 
-  const current = pages[active] || pages[0]
-  const sentences = useMemo(() => splitSentences(current?.text), [current?.text])
-  const currentSentence = sentences[sentenceIndex] || current?.text || ''
+  const collection = contentType === 'text' ? pages : picturePages
+  const current = collection[active] || collection[0]
+  const currentText = contentType === 'text' ? current?.text : current?.description
+  const sentences = useMemo(() => splitSentences(currentText), [currentText])
+  const currentSentence = sentences[sentenceIndex] || currentText || ''
+
+  useEffect(() => {
+    setActive(0)
+    setSentenceIndex(0)
+    speechService.stop()
+  }, [contentType])
 
   useEffect(() => {
     setSentenceIndex(0)
@@ -80,10 +104,11 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem('sarepta-pages', JSON.stringify(pages))
+      localStorage.setItem('sarepta-picture-pages', JSON.stringify(picturePages))
       setSavedAt(new Date())
     }, 350)
     return () => clearTimeout(timer)
-  }, [pages])
+  }, [pages, picturePages])
 
   const speakText = async text => {
     if (screenReaderMode) {
@@ -103,14 +128,18 @@ function App() {
     )
   }
 
-  const readCurrentPage = () => speakText(`${current.title}. ${current.text}`)
+  const readCurrentPage = () => {
+    const body = contentType === 'text' ? current.text : current.description
+    speakText(`${current.title}. ${body}`)
+  }
+
   const readCurrentSentence = () => speakText(currentSentence)
   const testSpeechRate = () => speakText(`Dette er en test av talehastighet ${speechRate.toFixed(2)} ganger.`)
 
   const nextSentence = () => {
     if (sentenceIndex < sentences.length - 1) {
       setSentenceIndex(index => index + 1)
-    } else if (active < pages.length - 1) {
+    } else if (active < collection.length - 1) {
       setActive(index => index + 1)
       setSentenceIndex(0)
     }
@@ -120,9 +149,10 @@ function App() {
     if (sentenceIndex > 0) {
       setSentenceIndex(index => index - 1)
     } else if (active > 0) {
-      const previousPage = pages[active - 1]
+      const previousPage = collection[active - 1]
+      const text = contentType === 'text' ? previousPage.text : previousPage.description
       setActive(index => index - 1)
-      setSentenceIndex(Math.max(0, splitSentences(previousPage.text).length - 1))
+      setSentenceIndex(Math.max(0, splitSentences(text).length - 1))
     }
   }
 
@@ -144,15 +174,62 @@ function App() {
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode, active, sentenceIndex, sentences.length, currentSentence, selectedVoice, speechRate, screenReaderMode])
+  }, [mode, active, sentenceIndex, sentences.length, currentSentence, selectedVoice, speechRate, screenReaderMode, contentType])
 
-  const updatePage = (index, field, value) => {
+  const updateTextPage = (index, field, value) => {
     setPages(prev => prev.map((page, i) => i === index ? { ...page, [field]: value } : page))
   }
 
-  const addPage = () => {
+  const updatePicturePage = (index, field, value) => {
+    setPicturePages(prev => prev.map((page, i) => i === index ? { ...page, [field]: value } : page))
+  }
+
+  const addTextPage = () => {
     setPages(prev => [...prev, { id: Date.now(), title: 'Ny side', text: 'Skriv tekst her.' }])
   }
+
+  const addPicturePage = () => {
+    setPicturePages(prev => [...prev, {
+      id: Date.now(),
+      title: 'Ny bildebokside',
+      description: 'Skriv en kort beskrivelse. Legg gjerne inn flere setninger.',
+      mediaType: 'image',
+      mediaUrl: '',
+      altText: ''
+    }])
+    setActive(picturePages.length)
+  }
+
+  const handleMediaUpload = event => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 3 * 1024 * 1024) {
+      setMediaMessage('Filen er over 3 MB. Velg en mindre fil i prototypen.')
+      event.target.value = ''
+      return
+    }
+
+    const isVideo = file.type.startsWith('video/')
+    const isImage = file.type.startsWith('image/')
+
+    if (!isVideo && !isImage) {
+      setMediaMessage('Velg et bilde eller et kort videoklipp.')
+      event.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      updatePicturePage(active, 'mediaUrl', reader.result)
+      updatePicturePage(active, 'mediaType', isVideo ? 'video' : 'image')
+      setMediaMessage(`${isVideo ? 'Video' : 'Bilde'} lagt til i prototypen.`)
+    }
+    reader.onerror = () => setMediaMessage('Kunne ikke lese filen.')
+    reader.readAsDataURL(file)
+  }
+
+  const currentLabel = contentType === 'text' ? 'Tekst' : 'Billedbok'
 
   return (
     <main>
@@ -167,39 +244,101 @@ function App() {
         </nav>
       </header>
 
+      <nav className="contentTabs" aria-label="Velg innholdstype">
+        <button className={contentType === 'text' ? 'active' : ''} onClick={() => setContentType('text')}>Tekst</button>
+        <button className={contentType === 'picturebook' ? 'active' : ''} onClick={() => setContentType('picturebook')}>Billedbok</button>
+      </nav>
+
       {mode === 'adult' ? (
         <section className="layout">
-          <aside className="sidebar" aria-label="Sider">
-            <div className="sideTitle">Innhold</div>
-            {pages.map((page, i) => (
+          <aside className="sidebar" aria-label={currentLabel}>
+            <div className="sideTitle">{currentLabel}</div>
+
+            {collection.map((page, i) => (
               <button key={page.id} className={active === i ? 'pageBtn selected' : 'pageBtn'} onClick={() => setActive(i)}>
                 <span>{i + 1}</span>
                 {page.title}
               </button>
             ))}
-            <button className="addBtn" onClick={addPage}>+ Ny side</button>
+
+            {contentType === 'text'
+              ? <button className="addBtn" onClick={addTextPage}>+ Ny tekstside</button>
+              : <button className="addBtn" onClick={addPicturePage}>+ Ny bildebokside</button>}
           </aside>
 
           <section className="editor">
             <div className="sectionHeader">
               <div>
-                <div className="eyebrow">Tekst</div>
-                <h2>Rediger innhold</h2>
+                <div className="eyebrow">{currentLabel}</div>
+                <h2>{contentType === 'text' ? 'Rediger innhold' : 'Rediger bildebokside'}</h2>
               </div>
               <div className="saveState" aria-live="polite">
                 {savedAt ? `Lagret ${savedAt.toLocaleTimeString('no-NO', {hour:'2-digit', minute:'2-digit'})}` : 'Lagrer…'}
               </div>
             </div>
 
-            <label>
-              Tittel
-              <input value={current.title} onChange={event => updatePage(active, 'title', event.target.value)} />
-            </label>
+            {contentType === 'text' ? (
+              <>
+                <label>
+                  Tittel
+                  <input value={current.title} onChange={event => updateTextPage(active, 'title', event.target.value)} />
+                </label>
 
-            <label>
-              Tekst
-              <textarea rows="8" value={current.text} onChange={event => updatePage(active, 'text', event.target.value)} />
-            </label>
+                <label>
+                  Tekst
+                  <textarea rows="8" value={current.text} onChange={event => updateTextPage(active, 'text', event.target.value)} />
+                </label>
+              </>
+            ) : (
+              <>
+                <label>
+                  Tittel
+                  <input value={current.title} onChange={event => updatePicturePage(active, 'title', event.target.value)} />
+                </label>
+
+                <div className="mediaEditor">
+                  <div className="mediaPreview" aria-label="Forhåndsvisning av media">
+                    {current.mediaUrl ? (
+                      current.mediaType === 'video'
+                        ? <video src={current.mediaUrl} controls preload="metadata" />
+                        : <img src={current.mediaUrl} alt={current.altText || ''} />
+                    ) : (
+                      <div className="mediaPlaceholder">
+                        <span aria-hidden="true">▧</span>
+                        <strong>Ingen media lagt til</strong>
+                        <small>Last opp et bilde eller kort videoklipp.</small>
+                      </div>
+                    )}
+                  </div>
+
+                  <label className="fileLabel">
+                    Bilde eller kort video
+                    <input type="file" accept="image/*,video/*" onChange={handleMediaUpload} />
+                  </label>
+
+                  <div className="mediaMessage" aria-live="polite">{mediaMessage}</div>
+                </div>
+
+                <label>
+                  Alternativ tekst for bildet
+                  <input
+                    value={current.altText || ''}
+                    onChange={event => updatePicturePage(active, 'altText', event.target.value)}
+                    placeholder="Kort beskrivelse av bildet for skjermleser"
+                  />
+                </label>
+
+                <label>
+                  Tekst og beskrivelse
+                  <textarea
+                    rows="7"
+                    value={current.description}
+                    onChange={event => updatePicturePage(active, 'description', event.target.value)}
+                    placeholder="Skriv teksten eleven skal kunne navigere gjennom setning for setning."
+                  />
+                </label>
+              </>
+            )}
 
             <section className="speechPanel" aria-labelledby="speech-heading">
               <div>
@@ -273,17 +412,35 @@ function App() {
             </div>
 
             <div className="note">
-              Prototypen bruker nettleser-/operativsystembasert talesyntese bak et eget SpeechService-grensesnitt. Skjermlesermodus kan slå av innebygd tale, og talehastigheten kan tilpasses uten å endre innholdet.
+              {contentType === 'picturebook'
+                ? 'Billedbok-prototypen viser opplasting av bilde/kort video, tilhørende tekst og setningsvis navigasjon. Media lagres kun lokalt i nettleseren i denne demonstrasjonen.'
+                : 'Prototypen bruker nettleser-/operativsystembasert talesyntese bak et eget SpeechService-grensesnitt. Skjermlesermodus kan slå av innebygd tale.'}
             </div>
           </section>
         </section>
       ) : (
         <section className="student" aria-label="Elevmodus">
-          <div className="progress" aria-label={`Side ${active + 1} av ${pages.length}, setning ${sentenceIndex + 1} av ${Math.max(1, sentences.length)}`}>
-            Side {active + 1}/{pages.length} · Setning {sentenceIndex + 1}/{Math.max(1, sentences.length)}
+          <div className="studentType">{currentLabel}</div>
+          <div className="progress" aria-label={`Side ${active + 1} av ${collection.length}, setning ${sentenceIndex + 1} av ${Math.max(1, sentences.length)}`}>
+            Side {active + 1}/{collection.length} · Setning {sentenceIndex + 1}/{Math.max(1, sentences.length)}
           </div>
 
           <article className="studentCard" tabIndex="0" aria-live="polite">
+            {contentType === 'picturebook' && (
+              <div className="studentMedia">
+                {current.mediaUrl ? (
+                  current.mediaType === 'video'
+                    ? <video src={current.mediaUrl} controls preload="metadata" aria-label={current.altText || current.title} />
+                    : <img src={current.mediaUrl} alt={current.altText || ''} />
+                ) : (
+                  <div className="mediaPlaceholder compact">
+                    <span aria-hidden="true">▧</span>
+                    <strong>Media ikke lagt til ennå</strong>
+                  </div>
+                )}
+              </div>
+            )}
+
             <h2>{current.title}</h2>
             <p className="sentenceFocus">{currentSentence}</p>
           </article>
@@ -291,7 +448,7 @@ function App() {
           <div className="studentActions">
             <button disabled={active === 0 && sentenceIndex === 0} onClick={previousSentence}>← Forrige setning</button>
             <button onClick={readCurrentSentence} disabled={screenReaderMode}>🔊 Les setningen</button>
-            <button disabled={active === pages.length - 1 && sentenceIndex >= sentences.length - 1} onClick={nextSentence}>Neste setning →</button>
+            <button disabled={active === collection.length - 1 && sentenceIndex >= sentences.length - 1} onClick={nextSentence}>Neste setning →</button>
           </div>
 
           <div className="studentVoice" aria-live="polite">
