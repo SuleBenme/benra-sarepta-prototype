@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { speechService } from './speechService'
 import './styles.css'
 
 const defaultPages = [
@@ -7,14 +8,6 @@ const defaultPages = [
   { id: 2, title: 'En tur ut', text: 'Solen skinner. Vi tar på sko og går ut.' },
   { id: 3, title: 'Ferdig', text: 'Bra jobbet. Nå er teksten ferdig.' },
 ]
-
-function speak(text) {
-  if (!('speechSynthesis' in window)) return
-  window.speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'nb-NO'
-  window.speechSynthesis.speak(utterance)
-}
 
 function App() {
   const [mode, setMode] = useState('adult')
@@ -27,6 +20,27 @@ function App() {
   })
   const [active, setActive] = useState(0)
   const [savedAt, setSavedAt] = useState(null)
+  const [voices, setVoices] = useState([])
+  const [selectedVoice, setSelectedVoice] = useState(() => localStorage.getItem('sarepta-voice') || '')
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const norwegian = speechService.getNorwegianVoices()
+      const all = speechService.getAvailableVoices()
+      setVoices(norwegian.length ? norwegian : all)
+    }
+
+    loadVoices()
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
+      return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedVoice) localStorage.setItem('sarepta-voice', selectedVoice)
+  }, [selectedVoice])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,6 +53,7 @@ function App() {
   useEffect(() => {
     const onKey = (event) => {
       if (mode !== 'student') return
+
       if (['ArrowRight', ' '].includes(event.key)) {
         event.preventDefault()
         setActive(i => Math.min(i + 1, pages.length - 1))
@@ -48,12 +63,13 @@ function App() {
       } else if (event.key.toLowerCase() === 't') {
         event.preventDefault()
         const page = pages[active]
-        speak(`${page.title}. ${page.text}`)
+        speechService.speak(`${page.title}. ${page.text}`, selectedVoice)
       }
     }
+
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode, pages, active])
+  }, [mode, pages, active, selectedVoice])
 
   const current = pages[active] || pages[0]
 
@@ -63,6 +79,10 @@ function App() {
 
   const addPage = () => {
     setPages(prev => [...prev, { id: Date.now(), title: 'Ny side', text: 'Skriv tekst her.' }])
+  }
+
+  const readCurrentPage = () => {
+    speechService.speak(`${current.title}. ${current.text}`, selectedVoice)
   }
 
   return (
@@ -112,19 +132,48 @@ function App() {
               <textarea rows="8" value={current.text} onChange={event => updatePage(active, 'text', event.target.value)} />
             </label>
 
+            <section className="speechPanel" aria-labelledby="speech-heading">
+              <div>
+                <div className="eyebrow">Talestøtte</div>
+                <h3 id="speech-heading">Norsk talesyntese</h3>
+              </div>
+
+              <label className="voiceLabel">
+                Stemme på denne enheten
+                <select value={selectedVoice} onChange={event => setSelectedVoice(event.target.value)}>
+                  <option value="">Automatisk norsk stemme</option>
+                  {voices.map(voice => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name} ({voice.lang})
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="speechMeta">
+                {speechService.isSupported()
+                  ? voices.length
+                    ? `${voices.length} relevant(e) stemme(r) funnet på denne enheten.`
+                    : 'Ingen norsk stemme ble eksplisitt funnet. Nettleserens standardstemme brukes.'
+                  : 'Nettleseren støtter ikke Web Speech API.'}
+              </div>
+            </section>
+
             <div className="actions">
-              <button onClick={() => speak(`${current.title}. ${current.text}`)}>🔊 Les opp</button>
+              <button onClick={readCurrentPage}>🔊 Les opp</button>
+              <button onClick={() => speechService.stop()}>Stopp tale</button>
               <button onClick={() => setMode('student')}>Åpne elevvisning</button>
             </div>
 
             <div className="note">
-              Denne prototypen bruker lokal lagring i nettleseren. Ekte autentisering, persondata og produksjonslagring er bevisst ikke tatt med.
+              Prototypen bruker nettleser-/operativsystembasert talesyntese. Talestøtten er lagt bak et eget SpeechService-grensesnitt, slik at en annen TTS-leverandør kan kobles inn senere uten å bygge om resten av applikasjonen.
             </div>
           </section>
         </section>
       ) : (
         <section className="student" aria-label="Elevmodus">
           <div className="progress" aria-label={`Side ${active + 1} av ${pages.length}`}>{active + 1} / {pages.length}</div>
+
           <article className="studentCard" tabIndex="0">
             <h2>{current.title}</h2>
             <p>{current.text}</p>
@@ -132,13 +181,18 @@ function App() {
 
           <div className="studentActions">
             <button disabled={active === 0} onClick={() => setActive(i => Math.max(i - 1, 0))}>← Forrige</button>
-            <button onClick={() => speak(`${current.title}. ${current.text}`)}>🔊 Les opp</button>
+            <button onClick={readCurrentPage}>🔊 Les opp</button>
             <button disabled={active === pages.length - 1} onClick={() => setActive(i => Math.min(i + 1, pages.length - 1))}>Neste →</button>
+          </div>
+
+          <div className="studentVoice">
+            Tale: {voices.find(v => v.voiceURI === selectedVoice)?.name || 'automatisk norsk stemme'}
           </div>
 
           <div className="switchHelp">
             Brytersimulering: <kbd>←</kbd> forrige · <kbd>→</kbd> eller <kbd>mellomrom</kbd> neste · <kbd>T</kbd> les opp
           </div>
+
           <button className="backBtn" onClick={() => setMode('adult')}>Tilbake til voksenmodus</button>
         </section>
       )}
