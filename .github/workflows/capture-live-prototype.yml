@@ -1,0 +1,54 @@
+name: Capture live Sarepta prototype
+
+on:
+  push:
+    paths:
+      - '.github/workflows/capture-live-prototype.yml'
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare Playwright
+        run: |
+          mkdir capture && cd capture
+          npm init -y
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Capture live prototype states
+        run: |
+          cd capture
+          cat > capture.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          import fs from 'fs';
+          const browser = await chromium.launch();
+          const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+          const url = 'https://sulebenme.github.io/benra-sarepta-prototype/';
+          await page.goto(url, { waitUntil: 'networkidle' });
+          fs.mkdirSync('shots', { recursive: true });
+
+          await page.screenshot({ path: 'shots/01-voksen-tekst.png', fullPage: true });
+
+          await page.getByRole('button', { name: 'Billedbok' }).click();
+          await page.waitForTimeout(400);
+          await page.screenshot({ path: 'shots/02-voksen-billedbok.png', fullPage: true });
+
+          await page.getByRole('button', { name: 'Elevmodus' }).click();
+          await page.waitForTimeout(400);
+          await page.screenshot({ path: 'shots/03-elev-billedbok.png', fullPage: true });
+
+          await page.getByRole('button', { name: 'Tekst' }).click();
+          await page.waitForTimeout(400);
+          await page.screenshot({ path: 'shots/04-elev-tekst.png', fullPage: true });
+
+          await browser.close();
+          EOF
+          node capture.mjs
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-sarepta-screenshots
+          path: capture/shots/*.png
+          if-no-files-found: error
